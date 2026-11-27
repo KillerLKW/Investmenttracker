@@ -65,7 +65,7 @@ function changeSectorSchema(){
 }
 function openSectorEditor(id){
   const p=current(),seen=new Set();sectorInstrument=id;sectorRevision=state.revision;sectorKey=crypto.randomUUID();sectorNewTaxonomy=crypto.randomUUID();
-  sectorTaxonomies=[TRACKER_SECTORS.records[0].taxonomy,...p.sector_snapshots.map(r=>r.taxonomy)].filter(t=>{const key=JSON.stringify(t);if(seen.has(key))return false;seen.add(key);return true;});
+  sectorTaxonomies=[...(TRACKER_SECTORS.records[0]?.taxonomy?[TRACKER_SECTORS.records[0].taxonomy]:[]),...p.sector_snapshots.map(r=>r.taxonomy)].filter(t=>{const key=JSON.stringify(t);if(seen.has(key))return false;seen.add(key);return true;});
   $('#sector-editor-form').reset();$('#sector-rows').innerHTML='';$('#sector-editor-error').textContent='';$('#sector-editor-name').textContent=p.instruments.find(i=>i.id===id).name;
   $('#sector-schema').innerHTML='<option value="">Schema auswählen</option>'+sectorTaxonomies.map((t,n)=>`<option value="${n}">${esc(t.label)} · beobachtet ${date(t.observed_date)}</option>`).join('')+'<option value="new">Neues eigenes Schema</option>';
   $('#sector-editor-form [name=sector_observed_date]').value=localDay();$('#sector-editor-form [name=sector_taxonomy_observed_date]').value=localDay();sectorOptions=[];addSectorRow();$('#sector-editor').showModal();

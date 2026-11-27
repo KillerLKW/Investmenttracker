@@ -22,6 +22,7 @@
 !/tools/
 !/design/
 !/pi/
+!/docs/
 /pi/*.html
 /tools/test_ui.cjs
 **/__pycache__/
