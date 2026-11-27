@@ -269,6 +269,9 @@ main>header{align-items:center}
  #positions>.position{min-width:0}
 }
 
+/* Public edition has three export/backup cards; no empty fourth column. */
+.public-edition #data>.public-backup-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+
 /* Group the same tasks as the workbook; keep every view directly reachable. */
 .sidebar-title{margin-bottom:14px}
 .sidebar .workspace{margin-bottom:12px}

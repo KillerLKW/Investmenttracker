@@ -271,6 +271,9 @@ main>header{align-items:center}
  #positions>.position{min-width:0}
 }
 
+/* Public edition has three export/backup cards; no empty fourth column. */
+.public-edition #data>.public-backup-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+
 /* Group the same tasks as the workbook; keep every view directly reachable. */
 .sidebar-title{margin-bottom:14px}
 .sidebar .workspace{margin-bottom:12px}
@@ -7500,7 +7503,7 @@ function openEditor(kind,id){
   const titles={company_void:'Unternehmensstand stornieren',sector_void:'Sektorstand stornieren',country_void:'Länderstand stornieren',region_add:'Regionaldaten erfassen',region_void:'Regionalstand stornieren',transaction_add:'Buchung erfassen',instrument_add:'Wertpapier hinzufügen',quote_add:'Kurs erfassen',transaction_void:'Buchung stornieren',portfolio_create:'Neues Depot'};$('#dialog-title').textContent=titles[kind];
   let html='';
   if(kind==='transaction_add')html=`<label class="field">Buchungstyp<select name="type">${Object.entries(names).map(([v,n])=>`<option value="${v}">${n}</option>`).join('')}</select></label>${field('Datum','date','date',localDay(),'required')}<label class="field" id="instrument-field">Wertpapier<select name="instrument_id"><option value="">Ohne Zuordnung</option>${options()}</select></label><div class="form-grid">${field('Betrag / Handelswert (€)','amount','text','','required inputmode="decimal" placeholder="z. B. 150,00"')}${field('Stückzahl','quantity','text','0','inputmode="decimal"')}</div><p class="muted">Beträge immer positiv eingeben. Bei Kauf/Verkauf Handelswert vor zusätzlichen Gebühren und Steuern. Der Buchungstyp bestimmt das Vorzeichen.</p><div class="form-grid">${field('Zusätzliche Gebühren (€)','fee','text','0','inputmode="decimal"')}${field('Zusätzliche Steuern (€)','tax','text','0','inputmode="decimal"')}</div>${field('Notiz (optional)','note','text','','maxlength="500"')}`;
-  if(kind==='instrument_add')html=field('Name','name','text','','required maxlength="160"')+field('ISIN','isin','text','','required minlength="12" maxlength="12" placeholder="z. B. IE00BK5BQV03"')+field('Strategie / Kategorie','category','text','Ohne Zuordnung','required maxlength="60"')+'<p class="muted">Die erste Version erfasst EUR-Handelswerte. Die Fondswährung kann davon abweichen.</p>';
+  if(kind==='instrument_add')html=field('Name','name','text','','required maxlength="160"')+field('ISIN','isin','text','','required minlength="12" maxlength="12" placeholder="z. B. IE00BK5BQV03"')+field('Strategie / Kategorie','category','text','Ohne Zuordnung','required maxlength="60"')+'<p class="muted">Handelswerte werden in EUR erfasst. Die Fondswährung kann davon abweichen.</p>';
   if(kind==='quote_add')html=`<label class="field">Wertpapier<select name="instrument_id" required>${options()}</select></label>${field('Kursdatum','date','date',localDay(),'required')}${field('Kurs in EUR','price','text','','required inputmode="decimal"')}${field('Quelle','source','text','Manuell','required maxlength="120"')}`;
   if(kind==='transaction_void')html=`<input name="id" type="hidden" value="${esc(id)}"><p>Die Buchung bleibt im Journal erhalten, zählt aber nicht mehr für Bestand und Cash. Abhängige Verkäufe können ein Storno verhindern.</p>${field('Grund','reason','text','','required maxlength="500"')}`;
   if(kind==='portfolio_create')html=field('Depotname','name','text','','required maxlength="80"')+'<label class="field">Verwendung<select name="mode"><option value="example">Beispiel / ausprobieren</option><option value="live">Eigenes Depot</option></select></label>';
@@ -7875,7 +7878,7 @@ function renderSectors(p){
   $('#sector-taxonomy').innerHTML='<option value="">Schema auswählen</option>'+taxonomies.map(t=>`<option value="${esc(t.taxonomy_id)}">${esc(t.labels.join(' / '))} · ${esc(t.taxonomy_id)}</option>`).join('');
   $('#sector-taxonomy').value=v.taxonomy;
   const chosen=taxonomies.find(t=>t.taxonomy_id===v.taxonomy),conflict=chosen?.conflict||d.warnings.some(w=>w.taxonomy_id===v.taxonomy&&['sector_conflict','sector_alias_conflict'].includes(w.code)),blocked=v.basis==='reported'&&(!chosen||conflict);
-  $('#sector-basis-note').textContent=v.basis==='total'?'Hauptansicht: Anteil am gesamten Wertpapierwert ohne Cash. Gleiche Namen aus verschiedenen Schemata bleiben getrennt.':!chosen?'Bitte ein Klassifikationsschema auswählen. Es gibt keine gemeinsame Normierung verschiedener Schemata.':conflict?'Widersprüchliche Schema-/Sektoridentitäten: Anteile innerhalb dieses Schemas werden nicht ausgegeben.':'Vorlagenbasis: Anteil innerhalb gemeldeter Sektorwerte des ausgewählten Schemas. Bezugswert R = '+money(chosen.reported.value)+'. Lücken und Überdeckung bleiben oben sichtbar; Rohgewichte werden nicht verändert.';
+  $('#sector-basis-note').textContent=v.basis==='total'?'Hauptansicht: Anteil am gesamten Wertpapierwert ohne Cash. Gleiche Namen aus verschiedenen Schemata bleiben getrennt.':!chosen?'Bitte ein Klassifikationsschema auswählen. Es gibt keine gemeinsame Normierung verschiedener Schemata.':conflict?'Widersprüchliche Schema-/Sektoridentitäten: Anteile innerhalb dieses Schemas werden nicht ausgegeben.':'Gewählte Prozentbasis: Anteil innerhalb gemeldeter Sektorwerte des ausgewählten Schemas. Bezugswert R = '+money(chosen.reported.value)+'. Lücken und Überdeckung bleiben oben sichtbar; Rohgewichte werden nicht verändert.';
   const headers=['Sektor','Klassifikationsschema','Gemeldeter Wert',v.basis==='total'?'Anteil am Wertpapierwert':'Anteil innerhalb gemeldeter Sektorwerte'];
   const rows=(d.sectors||[]).filter(r=>v.basis==='total'||r.taxonomy_id===v.taxonomy).sort((a,b)=>countryUnits(a.value)===countryUnits(b.value)?a.labels.join('/').localeCompare(b.labels.join('/')):countryUnits(a.value)>countryUnits(b.value)?-1:1);
   $('#sector-values').innerHTML=!d.complete?empty('Bewertung unvollständig','Fehlende Kurse ergänzen.'):blocked?empty('Schema auswählen oder Quellenkonflikt klären','Die Hauptansicht am Wertpapierwert bleibt verfügbar.'):rows.length?sectorTable(headers,rows.map(r=>`<tr data-sector-id="${esc(r.sector_id)}" data-taxonomy-id="${esc(r.taxonomy_id)}">${sectorCells(headers,[esc(r.labels.join(' / ')),`${esc(taxonomies.find(t=>t.taxonomy_id===r.taxonomy_id)?.labels.join(' / '))}<small>${esc(r.taxonomy_id)}</small>`,money(r.value),percent(v.basis==='total'?r.weight_total_securities:r.weight_reported_in_taxonomy)])}</tr>`)):empty('Noch keine gemeldeten Sektoren','Sektorstände manuell erfassen oder Vorlagenquellen prüfen.');
@@ -7963,7 +7966,7 @@ function renderCompanies(p){
  const mappings=d.mappings||[];if(!v.mapping&&mappings.length===1)v.mapping=mappings[0].mapping_id;
  $('#company-basis').value=v.basis;$('#company-mapping').innerHTML='<option value="">Schema auswählen</option>'+mappings.map(m=>`<option value="${esc(m.mapping_id)}">${esc(m.labels.join(' / '))}</option>`).join('');$('#company-mapping').value=v.mapping;
  const m=mappings.find(m=>m.mapping_id===v.mapping),blocked=v.basis==='reported'&&(!m||m.conflict);
- $('#company-note').textContent=v.basis==='total'?'Anteile am gesamten Wertpapierwert. Gleiche Namen aus verschiedenen Schemata bleiben getrennt.':blocked?'Schema auswählen oder Identitätskonflikt klären.':'Vorlagenbasis: gemeldete Werte dieses Schemas '+money(m.reported.value)+'. Ungeklärter Anteil: '+percent(m.unresolved_weight_reported_values)+'. Nicht gemeldeter Rest bleibt oben sichtbar.';
+ $('#company-note').textContent=v.basis==='total'?'Anteile am gesamten Wertpapierwert. Gleiche Namen aus verschiedenen Schemata bleiben getrennt.':blocked?'Schema auswählen oder Identitätskonflikt klären.':'Gewählte Prozentbasis: gemeldete Werte dieses Schemas '+money(m.reported.value)+'. Ungeklärter Anteil: '+percent(m.unresolved_weight_reported_values)+'. Nicht gemeldeter Rest bleibt oben sichtbar.';
  const headers=['Namensgruppe','Schema','Gemeldeter Wert','Anteil','ETF-Beiträge'];
  $('#company-values').innerHTML=!d.complete||blocked?empty('Keine vollständige Vergleichsbasis','Quellen oder Kurse prüfen.'):(d.companies||[]).length?sectorTable(headers,d.companies.filter(g=>v.basis==='total'||g.mapping_id===v.mapping).sort((a,b)=>countryUnits(a.value)>countryUnits(b.value)?-1:1).map(g=>`<tr>${sectorCells(headers,[esc(g.labels.join(' / ')),esc(mappings.find(m=>m.mapping_id===g.mapping_id)?.labels.join(' / ')),money(g.value),percent(v.basis==='total'?g.weight_total_securities:g.weight_reported_in_mapping),`<details><summary>${g.contributing_etf_count} ETF(s)</summary>${g.contributions.map(c=>`<p>${esc(name(c.instrument_id))}: ${money(c.value)} · ${percent(c.weight)} im ETF</p>`).join('')}</details>`])}</tr>`)):empty('Noch keine Unternehmensdaten','Vorlagenquellen prüfen oder einen Depotexport mit Unternehmensständen importieren.');
  const ph=['ETF-Paar','Gemeinsame Gruppen','Beobachteter Gewichtsindikator'];
@@ -8132,7 +8135,7 @@ function mdSource(r){return `<p class="muted">Beobachtet: ${date(r.observed_date
 function renderMetadata(p){
  const old=mdChoices.get(p.id);$('#md-instrument').innerHTML=p.instruments.length?p.instruments.map(i=>`<option value="${esc(i.id)}">${esc(i.name)} · ${esc(i.isin)}</option>`).join(''):'<option value="">Noch keine Wertpapiere</option>';if(p.instruments.some(i=>i.id===old))$('#md-instrument').value=old;mdChoices.set(p.id,$('#md-instrument').value);$('#md-new').disabled=$('#md-template').disabled=!p.instruments.length;renderMetadataChoice();
 }
-function renderMetadataChoice(){const p=current(),iid=$('#md-instrument').value,r=p?.instrument_metadata?.instruments.find(r=>r.instrument_id===iid);$('#md-current').innerHTML=r?.snapshot_id?`<h3>Am Stichtag ${date($('#as-of').value)} bekannter Stand</h3>${mdSource(r)}${mdData(r.data)}${r.warnings.length?`<ul class="notice warning">${r.warnings.map(w=>`<li>${esc(mdWarnings[w]||'Eine Produktangabe ist unbekannt.')}</li>`).join('')}</ul>`:''}`:'<div class="empty">Kein am gewählten Stichtag bekannter Quellenstand. Erfasse eigene Angaben oder wähle Vorlagendaten ausdrücklich aus.</div>';const history=(p?.instrument_metadata_snapshots||[]).filter(r=>r.instrument_id===iid).sort((a,b)=>b.observed_date.localeCompare(a.observed_date)||b.sequence-a.sequence);$('#md-history-content').innerHTML=history.length?history.map(r=>`<article class="md-history-row"><strong>${r.void?'Storniert':r.observed_date>$('#as-of').value?'Erst nach dem Stichtag beobachtet':'Erfasster Quellenstand'}</strong>${mdSource(r)}<details><summary>Angaben ansehen</summary>${mdData(r.data)}</details>${r.void?`<p class="muted">Grund: ${esc(r.void_reason)}</p>`:`<button class="row-action" data-md-void="${esc(r.id)}">Stand stornieren</button>`}</article>`).join(''):'<p class="muted">Noch keine Quellenhistorie.</p>';}
+function renderMetadataChoice(){const p=current(),iid=$('#md-instrument').value,r=p?.instrument_metadata?.instruments.find(r=>r.instrument_id===iid);$('#md-current').innerHTML=r?.snapshot_id?`<h3>Am Stichtag ${date($('#as-of').value)} bekannter Stand</h3>${mdSource(r)}${mdData(r.data)}${r.warnings.length?`<ul class="notice warning">${r.warnings.map(w=>`<li>${esc(mdWarnings[w]||'Eine Produktangabe ist unbekannt.')}</li>`).join('')}</ul>`:''}`:'<div class="empty">Kein am gewählten Stichtag bekannter Quellenstand. Wähle ein Wertpapier und erfasse eigene Angaben über „Neuen Quellenstand erfassen“.</div>';const history=(p?.instrument_metadata_snapshots||[]).filter(r=>r.instrument_id===iid).sort((a,b)=>b.observed_date.localeCompare(a.observed_date)||b.sequence-a.sequence);$('#md-history-content').innerHTML=history.length?history.map(r=>`<article class="md-history-row"><strong>${r.void?'Storniert':r.observed_date>$('#as-of').value?'Erst nach dem Stichtag beobachtet':'Erfasster Quellenstand'}</strong>${mdSource(r)}<details><summary>Angaben ansehen</summary>${mdData(r.data)}</details>${r.void?`<p class="muted">Grund: ${esc(r.void_reason)}</p>`:`<button class="row-action" data-md-void="${esc(r.id)}">Stand stornieren</button>`}</article>`).join(''):'<p class="muted">Noch keine Quellenhistorie.</p>';}
 $('#md-instrument').onchange=()=>{mdChoices.set(selected,$('#md-instrument').value);renderMetadataChoice();};
 const mdEditor=document.createElement('dialog');mdEditor.id='md-editor';mdEditor.setAttribute('aria-labelledby','md-title');mdEditor.innerHTML='<form id="md-form" novalidate><div class="dialog-heading"><h2 id="md-title"></h2><button id="md-close" type="button" class="icon-button" aria-label="Stammdaten schließen">×</button></div><p id="md-depot"></p><div id="md-fields"></div><p id="md-error" role="alert" class="form-error"></p><div class="dialog-actions"><button id="md-cancel" type="button" class="secondary">Abbrechen</button><button id="md-save" type="submit" class="primary">Quellenstand speichern</button></div></form>';document.body.append(mdEditor);
 const mdOptional=(label,name,type='text',extra='')=>field(label,name,type,'',extra);
@@ -8541,7 +8544,16 @@ startTracker();
 /* Static public edition: no embedded portfolios, source snapshots or server access. */
 (()=>{
  if(!globalThis.TRACKER_PUBLIC_EDITION)return;
- const emptyOriginal=empty;empty=function(title,body){return emptyOriginal(title,title==='Dein Depot beginnt hier'?'Erfasse eigene Wertpapiere und Buchungen oder lies unter „Daten & Sicherung“ eine eigene JSON-Sicherung ein.':body);};
+ document.documentElement.classList.add('public-edition');
+ const emptyCopy=new Map([
+  ['Dein Depot beginnt hier','Erfasse eigene Wertpapiere und Buchungen oder lies unter „Daten & Sicherung“ eine eigene JSON-Sicherung ein.'],
+  ['Noch keine Wertpapiere','Lege unter „Wertpapiere & Kurse“ eigene Wertpapiere an oder importiere unter „Daten & Sicherung“ einen eigenen Depotexport.'],
+  ['Noch keine Positionshistorie','Erfasse eigene Wertpapierbuchungen. Auch vollständig verkaufte Positionen bleiben danach sichtbar.'],
+  ['Noch keine gemeldeten Sektoren','Erfasse Sektorstände bei deinen Wertpapieren oder importiere einen eigenen Depotexport mit Sektorständen.'],
+  ['Noch keine Unternehmensdaten','Erfasse Unternehmensstände bei deinen Wertpapieren oder importiere einen eigenen Depotexport mit Unternehmensständen.'],
+  ['Eigene Register beginnen leer','Lege über „Eigenes Register anlegen“ dein erstes depotübergreifendes Register an.']
+ ]);
+ const emptyOriginal=empty;empty=function(title,body){return emptyOriginal(title,emptyCopy.get(title)||body);};
  const notice=document.createElement('p');notice.className='notice';notice.textContent='Webausgabe ohne Vorlagendaten. Deine Depotdaten bleiben in diesem Browser. Für einen Gerätewechsel eine vollständige JSON-Sicherung verwenden.';document.querySelector('.toolbar').after(notice);
  const demo=document.querySelector('#template')?.closest('.panel');if(demo)demo.hidden=true;
  for(const id of ['template','region-template','country-template','sector-template','company-template','al-template','md-template']){const el=document.getElementById(id);if(el){el.hidden=true;el.disabled=true;}}
@@ -8550,7 +8562,39 @@ startTracker();
  for(const link of document.querySelectorAll('.section-index a')){const id=link.hash.split('/')[1],el=id&&document.getElementById(id);if(el?.hidden)link.remove();}
  const planning=document.querySelector('#planning');const p=document.createElement('p');p.className='muted';p.textContent='Eigene Zielgewichte und Vergleiche sind verfügbar. Feste Handelsvorschauen der Tabellen-Vorlage sind in dieser datenfreien Webausgabe nicht enthalten.';planning?.prepend(p);
  const warning=document.querySelector('#gdp>.panel>.notice');if(warning)warning.textContent='Diese Webausgabe enthält keine BIP-Vorlagendaten. Eigene Datensätze können lokal erfasst oder aus einer eigenen Sicherung übernommen werden.';
- const sync=document.querySelector('#sy-panel p');if(sync)sync.textContent='GitHub Pages stellt die Anwendung bereit. Es gibt keinen automatischen Abgleich deiner Depotdaten zwischen Geräten. Deine Eingaben und Sicherungsimporte werden lokal in diesem Browser verarbeitet.';
+ const text=(selector,value)=>{const el=document.querySelector(selector);if(el)el.textContent=value;};
+ text('#distribution>.panel>p','Regionaldaten gelten für den jeweils erfassten Quellenstand. Sie werden nicht automatisch aktualisiert.');
+ text('#countries>.panel>p','Zusammensetzung und Klassifikation richten sich nach deinen erfassten Quellen und deren Datum. Fehlende Angaben bleiben unbekannt; keine automatische Aktualisierung.');
+ text('#sector-basis option[value="reported"]','Gemeldete Sektorwerte des ausgewählten Schemas');
+ text('#company-basis option[value="reported"]','Gemeldete Werte des ausgewählten Schemas');
+ text('#gdp-basis option[value="world"]','Weltbasis der Quelle / gesamter Wertpapierwert');
+ text('#targets>p','Feste Beispielziele aus der Tabellen-Vorlage, keine persönlichen Zielvorgaben. Eigene Gewichte kannst du unter „Eigene Zielgewichte“ festlegen. Zielband: ±10 % relativ zum Zielgewicht, einschließlich der Grenzen.');
+ text('#sy-panel h2','Speicherung & Gerätewechsel');
+ text('#sy-panel p','Diese Website synchronisiert deine Daten nicht automatisch zwischen Geräten. Lade unter „Vollständige Sicherung“ eine JSON-Datei herunter und lies sie auf dem anderen Gerät wieder ein. Eingaben und Importe bleiben im jeweiligen Browser.');
+ text('#data-path + p','Deine Daten bleiben auf diesem Gerät in diesem Browser. Bewahre zusätzlich eine vollständige JSON-Sicherung auf einem zweiten Medium auf.');
+ // Keep the existing controls and event handlers; only clarify scope and layout.
+ const grid=document.querySelector('#data>.data-grid');grid.classList.add('public-backup-grid');
+ for(const step of grid.querySelectorAll('.step'))step.remove();
+ const backup=document.querySelector('#backup'),backupCard=backup.closest('.panel');
+ grid.prepend(backupCard);
+ text('#backup','Vollständige Sicherung herunterladen');
+ backupCard.querySelector('h2').textContent='Vollständige Sicherung';
+ backupCard.querySelector('p').textContent='Alle Depots, Freistellungsregister, BIP-Daten und das Änderungsprotokoll gemeinsam sichern. Empfohlen vor einem Gerätewechsel. Die JSON-Datei zusätzlich auf einem zweiten Medium aufbewahren.';
+ document.querySelector('#export').closest('.panel').querySelector('h2').textContent='Einzelnes Depot exportieren';
+ document.querySelector('#export').closest('.panel').querySelector('p').textContent='Nur das ausgewählte Depot mit seinen Daten exportieren. Depotübergreifende Freistellungsregister und eigene BIP-Datensätze sind nicht enthalten. Für einen Gerätewechsel die vollständige Sicherung verwenden.';
+ const index=document.querySelector('#data>.section-index');
+ if(index){for(const panel of document.querySelectorAll('#data .panel')){const link=[...index.querySelectorAll('a')].find(a=>a.hash===`#data/${panel.id}`);if(link){link.textContent=panel.querySelector('h2').textContent;index.append(link);}}}
+ const originalNavigate=navigate;
+ function updatePageAction(){
+  const button=document.querySelector('#new-transaction');
+  const actions={overview:['+ Buchung erfassen',()=>openEditor('transaction_add')],journal:['+ Buchung erfassen',()=>openEditor('transaction_add')],securities:['+ Wertpapier anlegen',()=>document.querySelector('#new-instrument').click()],data:['Vollständig sichern',()=>backup.click()],planning:['Eigene Ziele bearbeiten',()=>{location.hash='#planning/ct-panel';}],allowances:['+ Register anlegen',()=>document.querySelector('#al-new').click()]};
+  const entry=actions[page];button.hidden=!entry;
+  button.onclick=entry?entry[1]:null;
+  if(entry)button.textContent=entry[0];
+  if(page==='data')text('#subtitle','Daten sichern, wieder einlesen und die Darstellung anpassen.');
+ }
+ navigate=function(next){originalNavigate(next);updatePageAction();};
+ updatePageAction();
  const originalAPI=TrackerLocal.api;TrackerLocal.api=function(route,body){if(route==='import/preview'&&body?.source==='template')return Promise.reject(Error('Diese Webausgabe enthält keine Vorlagendaten.'));return originalAPI.call(this,route,body);};
 })();
 
