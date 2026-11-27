@@ -1,0 +1,14 @@
+/* Fixed-template target comparison on independently valued stored/scenario sides. */
+(function(){
+ const D=typeof module!=='undefined'?require('./local-domain.js'):TrackerDomain,V=typeof module!=='undefined'?require('./portfolio-price-domain.js'):TrackerPortfolioPrice,R=typeof module!=='undefined'?require('./region-value-domain.js'):TrackerRegionValues,T=typeof module!=='undefined'?require('./target-domain.js'):TrackerTargets,S=10n**24n;
+ function fields(r,keys,label){if(!r||typeof r!=='object'||Array.isArray(r)||Object.keys(r).length!==keys.length||keys.some(k=>!Object.hasOwn(r,k)))D.fail(label+': vollständige Felder ohne zusätzliche Angaben erforderlich.');}
+ function payload(raw){fields(raw,['comparison_version','valuation','plan'],'Szenario-Soll-Ist');if(raw.comparison_version!==1)D.fail('Unbekannte Soll-Ist-Version.');fields(raw.plan,['mode','amount'],'Sollbasis');const mode=raw.plan.mode;if(!['current','deposit','manual'].includes(mode))D.fail('Sollbasis ausdrücklich wählen.');if(mode==='current'&&raw.plan.amount!==null)D.fail('Aktuelle Sollbasis benötigt amount=null.');return {comparison_version:1,valuation:V.payload(raw.valuation),plan:{mode,amount:mode==='current'?null:D.number(raw.plan.amount,'Planungsbetrag',mode==='deposit')}};}
+ function calculate(portfolio,input){const request=payload(input),valuation=V.calculate(portfolio,request.valuation),date=valuation.valuation_date;
+  function side(key){const distribution=R.project(portfolio,date,valuation.positions.map(p=>({instrument_id:p.instrument.id,quantity:p.quantity,value:p[key+'_value']}))),comparison=T.compare(distribution,request.plan),weights=rows=>!distribution.complete||distribution.value==='0'?null:D.str(S-rows.reduce((sum,r)=>sum+D.dec(r.weight),0n));
+   if(distribution.complete&&D.dec(distribution.value)!==D.dec(valuation[key].securities_value))D.fail('Wertpapierbasis und Regionalprojektion widersprechen sich.');
+   return {valuation:structuredClone(valuation[key]),distribution,comparison,regional_uncertainty:distribution.warnings.some(w=>['missing_weights','unknown_composition_date'].includes(w.code))||distribution.positions.some(p=>p.regions&&p.regions.unknown!=='0'),weight_rounding_residuals:{regions:weights(distribution.regions?Object.values(distribution.regions):[]),categories:weights(distribution.categories||[])}};
+  }
+  return {comparison_version:1,valuation_date:date,currency:'EUR',hypothetical:valuation.hypothetical,plan:request.plan,target_basis:'fixed_template',cash:valuation.cash,valuation,stored:side('stored'),scenario:side('scenario'),note:'Soll-Ist-Vergleich mit festen Vorlagenzielen; gleiche Originalbestände und Cash, getrennte Kurs- und Regionalunsicherheit. Keine Handelsplanung, Buchung, Rendite oder Zielprofiländerung.'};
+ }
+ const api=Object.freeze({payload,calculate});if(typeof module!=='undefined')module.exports=api;else globalThis.TrackerPortfolioTargets=api;
+})();
