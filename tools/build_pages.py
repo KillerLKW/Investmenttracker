@@ -33,7 +33,7 @@ def build(output=None):
     if len(loops) != 1:
         raise ValueError('Expected one explicit frontend script list')
     names = ast.literal_eval(loops[0].iter)
-    for name in names + ['navigation.js', 'mobile-menu.js', 'public-edition.js']:
+    for name in names + ['navigation.js', 'mobile-menu.js', 'public-edition.js', 'public-header.js']:
         if Path(name).name != name or not name.endswith('.js'):
             raise ValueError('Invalid frontend source name')
         script += (ROOT / 'web' / name).read_text('utf-8') + '\n'

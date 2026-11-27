@@ -272,6 +272,30 @@ main>header{align-items:center}
 /* Public edition has three export/backup cards; no empty fourth column. */
 .public-edition #data>.public-backup-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
 
+/* Compact valuation context for the public website. */
+.public-edition .toolbar{margin:12px 0 8px;gap:12px}
+.view-context{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 24px;margin-bottom:18px;font-size:12px;color:var(--muted)}
+.view-context>details{min-width:0;max-width:100%}
+.view-context summary,.public-edition .page-sections>summary{cursor:pointer;min-height:44px;padding:12px 0;color:var(--text)}
+.view-context summary:focus-visible,.page-sections>summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:4px}
+.context-content{max-width:72ch;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;line-height:1.6}
+.context-content>label{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.context-content input{font-size:12px;min-height:40px}
+.context-content p{margin:8px 0}
+.context-date{color:var(--accent);font-weight:600}
+.public-edition .page-sections>summary{display:none}
+.public-edition .page-sections .section-index{margin-bottom:16px;padding:0 0 10px}
+@media(max-width:650px){
+ .public-edition main>header{margin-bottom:14px}
+ .public-edition .toolbar{gap:8px 12px}
+ .public-edition .view-context{display:block;margin-bottom:12px}
+ .public-edition .view-context summary{padding:10px 0;min-height:44px}
+ .public-edition .context-date{display:inline;overflow-wrap:anywhere}
+ .public-edition .page-sections{margin:0 0 14px;border-bottom:1px solid var(--border)}
+ .public-edition .page-sections>summary{display:list-item;font-size:12px;list-style-position:inside}
+ .public-edition .page-sections .section-index{border:0;margin-bottom:0;padding-bottom:12px}
+}
+
 /* Group the same tasks as the workbook; keep every view directly reachable. */
 .sidebar-title{margin-bottom:14px}
 .sidebar .workspace{margin-bottom:12px}

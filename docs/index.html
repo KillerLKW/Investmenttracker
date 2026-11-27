@@ -274,6 +274,30 @@ main>header{align-items:center}
 /* Public edition has three export/backup cards; no empty fourth column. */
 .public-edition #data>.public-backup-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
 
+/* Compact valuation context for the public website. */
+.public-edition .toolbar{margin:12px 0 8px;gap:12px}
+.view-context{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 24px;margin-bottom:18px;font-size:12px;color:var(--muted)}
+.view-context>details{min-width:0;max-width:100%}
+.view-context summary,.public-edition .page-sections>summary{cursor:pointer;min-height:44px;padding:12px 0;color:var(--text)}
+.view-context summary:focus-visible,.page-sections>summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:4px}
+.context-content{max-width:72ch;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;line-height:1.6}
+.context-content>label{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.context-content input{font-size:12px;min-height:40px}
+.context-content p{margin:8px 0}
+.context-date{color:var(--accent);font-weight:600}
+.public-edition .page-sections>summary{display:none}
+.public-edition .page-sections .section-index{margin-bottom:16px;padding:0 0 10px}
+@media(max-width:650px){
+ .public-edition main>header{margin-bottom:14px}
+ .public-edition .toolbar{gap:8px 12px}
+ .public-edition .view-context{display:block;margin-bottom:12px}
+ .public-edition .view-context summary{padding:10px 0;min-height:44px}
+ .public-edition .context-date{display:inline;overflow-wrap:anywhere}
+ .public-edition .page-sections{margin:0 0 14px;border-bottom:1px solid var(--border)}
+ .public-edition .page-sections>summary{display:list-item;font-size:12px;list-style-position:inside}
+ .public-edition .page-sections .section-index{border:0;margin-bottom:0;padding-bottom:12px}
+}
+
 /* Group the same tasks as the workbook; keep every view directly reachable. */
 .sidebar-title{margin-bottom:14px}
 .sidebar .workspace{margin-bottom:12px}
@@ -8596,6 +8620,47 @@ startTracker();
  navigate=function(next){originalNavigate(next);updatePageAction();};
  updatePageAction();
  const originalAPI=TrackerLocal.api;TrackerLocal.api=function(route,body){if(route==='import/preview'&&body?.source==='template')return Promise.reject(Error('Diese Webausgabe enthält keine Vorlagendaten.'));return originalAPI.call(this,route,body);};
+})();
+
+/* Compact public-website context; retain the original date inputs and handlers. */
+(()=>{
+ if(!globalThis.TRACKER_PUBLIC_EDITION)return;
+ const toolbar=document.querySelector('.toolbar');
+ const context=document.createElement('div');context.className='view-context';
+ const valuation=document.createElement('details');valuation.id='valuation-details';
+ const summary=document.createElement('summary');summary.append('Bewertungsdetails');
+ const activeDate=document.createElement('span');activeDate.className='context-date';summary.append(activeDate);
+ valuation.append(summary);
+ const content=document.createElement('div');content.className='context-content';
+ content.append(document.querySelector('#pc-knowledge').closest('label'),document.querySelector('#pc-date-note'));
+ valuation.append(content);
+ const storage=document.createElement('details');storage.id='storage-details';
+ const storageSummary=document.createElement('summary');storageSummary.textContent='Auf diesem Gerät · keine Synchronisierung';
+ const storageCopy=document.createElement('p');storageCopy.textContent='Deine Depotdaten bleiben in diesem Browser. Für einen Gerätewechsel eine vollständige JSON-Sicherung herunterladen und auf dem anderen Gerät einlesen. Browserdaten können gelöscht werden; bewahre Sicherungen zusätzlich auf einem zweiten Medium auf.';
+ const backupLink=document.createElement('button');backupLink.type='button';backupLink.className='text-button';backupLink.dataset.go='data';backupLink.textContent='Zu Daten & Sicherung →';
+ const storageContent=document.createElement('div');storageContent.className='context-content';storageContent.append(storageCopy,backupLink);
+ storage.append(storageSummary,storageContent);context.append(valuation,storage);
+ // Replace only the public-edition notice, leaving all warnings/errors intact.
+ const publicNotice=toolbar.nextElementSibling;
+ if(publicNotice?.classList.contains('notice'))publicNotice.remove();
+ toolbar.after(context);
+ function updateContext(){
+  const value=document.querySelector('#pc-knowledge').value,asOf=document.querySelector('#as-of').value;
+  activeDate.textContent=value&&value!==asOf?` · Klärungen bis ${date(value)}`:'';
+  valuation.classList.toggle('has-custom-date',!!value&&value!==asOf);
+ }
+ for(const id of ['pc-knowledge','as-of'])document.getElementById(id).addEventListener('change',updateContext);
+ updateContext();
+ // On narrow displays the section list is available without filling the screen.
+ const mobile=matchMedia('(max-width:650px)'),sectionMenus=[];
+ for(const index of document.querySelectorAll('.section-index')){
+  const menu=document.createElement('details');menu.className='page-sections';
+  const heading=document.createElement('summary');heading.textContent='Abschnitte dieser Seite';
+  index.before(menu);menu.append(heading,index);sectionMenus.push(menu);
+  index.addEventListener('click',e=>{if(mobile.matches&&e.target.closest('a'))menu.open=false;});
+ }
+ function layout(){for(const menu of sectionMenus)menu.open=!mobile.matches;}
+ mobile.addEventListener('change',layout);layout();
 })();
 
 
