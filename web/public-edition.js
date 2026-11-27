@@ -1,6 +1,7 @@
 /* Static public edition: no embedded portfolios, source snapshots or server access. */
 (()=>{
  if(!globalThis.TRACKER_PUBLIC_EDITION)return;
+ const emptyOriginal=empty;empty=function(title,body){return emptyOriginal(title,title==='Dein Depot beginnt hier'?'Erfasse eigene Wertpapiere und Buchungen oder lies unter „Daten & Sicherung“ eine eigene JSON-Sicherung ein.':body);};
  const notice=document.createElement('p');notice.className='notice';notice.textContent='Webausgabe ohne Vorlagendaten. Deine Depotdaten bleiben in diesem Browser. Für einen Gerätewechsel eine vollständige JSON-Sicherung verwenden.';document.querySelector('.toolbar').after(notice);
  const demo=document.querySelector('#template')?.closest('.panel');if(demo)demo.hidden=true;
  for(const id of ['template','region-template','country-template','sector-template','company-template','al-template','md-template']){const el=document.getElementById(id);if(el){el.hidden=true;el.disabled=true;}}
